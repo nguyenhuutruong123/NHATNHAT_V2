@@ -15,6 +15,7 @@ import geso.dms.center.db.sql.*;
 
 public class Asm implements IAsm {
 	public String Id;
+public String Id1;
 	public String asmTen;
 	public String dienthoai;
 	public String email;
