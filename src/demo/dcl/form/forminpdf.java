@@ -35,7 +35,7 @@ public class forminpdf extends HttpServlet {
 	    response.setCharacterEncoding("UTF-8");
 	    response.setContentType("text/html; charset=UTF-8"); 	    
 	    HttpSession session = request.getSession();	    
-	    String nextJSP = request.getContextPath() + "/pages/Center/formin1.jsp";
+	    String nextJSP = request.getContextPath() + "/pages/Center/formin13333.jsp";
 		response.sendRedirect(nextJSP);
 		
 	}
