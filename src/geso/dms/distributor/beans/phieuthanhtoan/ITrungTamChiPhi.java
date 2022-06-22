@@ -1,0 +1,16 @@
+package geso.dms.distributor.beans.phieuthanhtoan;
+
+public interface ITrungTamChiPhi
+{
+	public String getId();
+
+	public void setId(String id);
+
+	public String getTen();
+
+	public void setTen(String ten);
+
+	public void setMaChiPhi(String machiphi);
+
+	public String getMaChiPhi();
+}

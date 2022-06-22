@@ -1,0 +1,583 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page  import = "geso.dms.center.beans.dieukienkhuyenmai.*" %>
+<%@ page  import = "geso.dms.center.beans.dieukienkhuyenmai.imp.*" %>
+<%@ page  import = "java.sql.ResultSet" %>
+<%@ page  import = "java.util.Hashtable" %>
+<%@ page  import = "java.util.List" %>
+<%@ page  import = "geso.dms.center.util.*" %>
+<%@ page  import = "java.text.DecimalFormat" %>
+<%@ page  import = "java.text.NumberFormat" %>
+<% NumberFormat formatter = new DecimalFormat("#,###,###");%>
+<% IDieukienkhuyenmai dkkmBean = (IDieukienkhuyenmai)session.getAttribute("dkkmBean"); %>
+<% ResultSet nhomsp = dkkmBean.getNhomspRs(); %>
+<% Hashtable<String, Integer> sp_nhomSpIds = dkkmBean.getSp_nhomspIds(); %>
+<% List<ISanpham> spList = dkkmBean.getSpList(); %>
+<% List<ISanpham> spSudungList = dkkmBean.getSpSudungList(); %>
+
+<% String userId = (String) session.getAttribute("userId");  %>
+<% String userTen = (String) session.getAttribute("userTen"); 
+Utility util = new Utility();
+%>
+<%String url = util.getChuyenNguUrl("DieukienkhuyenmaiSvl", "",session); %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <% Utility Utilback = new Utility(); %>
+<html>
+<head>
+	<TITLE><%= getServletContext().getInitParameter("TITLENAME") %></TITLE>
+	<META http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<META http-equiv="Content-Style-Type" content="text/css">
+
+	<LINK rel="stylesheet" type="text/css" media="print" href="../css/impression.css">
+	<LINK rel="stylesheet" href="../css/main.css" type="text/css">
+   	<link href="../css/jquery-ui.css" rel="stylesheet" type="text/css"/>
+  	<script type="text/javascript" src="../scripts/jquery.min.js"></script>
+    <script type="text/javascript" src="..scripts/jquery-1.js"></script>
+    <link type="text/css" rel="stylesheet" href="../css/mybutton.css">
+    
+    <LINK rel="stylesheet" type="text/css" href="../css/style.css" />
+	<style type="text/css">
+		#mainContainer{
+			width:600px;
+			margin:0 auto;
+			text-align:left;
+			height:100%;
+			border-left:3px double #000;
+			border-right:3px double #000;
+		}
+		#formContent{
+			padding:5px;
+		}
+		/* END CSS ONLY NEEDED IN DEMO */
+			
+		/* Big box with list of options */
+		#ajax_listOfOptions{
+			position:absolute;	/* Never change this one */
+			width:auto;	/* Width of box */
+			height:200px;	/* Height of box */
+			overflow:auto;	/* Scrolling features */
+			border:1px solid #317082;	/* Dark green border */
+			background-color:#C5E8CD;	/* White background color */
+	    	color: black;
+			text-align:left;
+			font-size:1.0em;
+			z-index:100;
+		}
+		#ajax_listOfOptions div{	/* General rule for both .optionDiv and .optionDivSelected */
+			margin:1px;		
+			padding:1px;
+			cursor:pointer;
+			font-size:1.0em;
+		}
+		#ajax_listOfOptions .optionDiv{	/* Div for each item in list */
+			
+		}
+		#ajax_listOfOptions .optionDivSelected{ /* Selected item in the list */
+			background-color:#317082; /*mau khi di chuyen */
+			color:#FFF;
+		}
+		#ajax_listOfOptions_iframe{
+			background-color:#F00;
+			position:absolute;
+			z-index:5;
+		}
+		form{
+			display:inline;
+		}
+		#dhtmltooltip
+		{
+			position: absolute;
+			left: -300px;
+			width: 150px;
+			border: 1px solid black;
+			padding: 2px;
+			background-color: lightyellow;
+			visibility: hidden;
+			z-index: 100;
+			/*Remove below line to remove shadow. Below line should always appear last within this CSS*/
+			filter: progid:DXImageTransform.Microsoft.Shadow(color=gray,direction=135);
+		}	
+		#dhtmlpointer
+		{
+			position:absolute;
+			left: -300px;
+			z-index: 101;
+			visibility: hidden;
+		}	
+	</style>
+	<script type="text/javascript" src="../scripts/ajax.js"></script>
+	<script type="text/javascript" src="../scripts/dkkhuyenmai_sanpham.js"></script>
+     <script type="text/javascript">
+        $(document).ready(function(){
+            $(".button").hover(function(){
+                $(".button img")
+                .animate({top:"-10px"}, 200).animate({top:"-4px"}, 200) // first jump
+                .animate({top:"-7px"}, 100).animate({top:"-4px"}, 100) // second jump
+                .animate({top:"-6px"}, 100).animate({top:"-4px"}, 100); // the last jump
+            });
+        }); 
+    </script>
+    
+	<script language="javascript" type="text/javascript">
+	 function DinhDangTien(num) 
+	 {
+	    num = num.toString().replace(/\$|\,/g,'');
+	    if(isNaN(num))
+	    num = "0";
+	    sign = (num == (num = Math.abs(num)));
+	    num = Math.floor(num*100+0.50000000001);
+	    num = Math.floor(num/100).toString();
+	    for (var i = 0; i < Math.floor((num.length-(1+i))/3); i++)
+	    num = num.substring(0,num.length-(4*i+3))+','+
+	    num.substring(num.length-(4*i+3));
+	    return (((sign)?'':'-') + num);
+	}
+	 function Dinhdang(element)
+		{
+			element.value=DinhDangTien(element.value);
+			if(element.value== '' ||element.value=='0' )
+			{
+				element.value= '';
+			}
+		}
+	function replaces()
+	{
+		var masp = document.getElementsByName("masp");
+		var tensp = document.getElementsByName("tensp");
+		var type = document.getElementById("type");
+
+		var i;
+		for(i=0; i < masp.length; i++)
+		{
+			if(masp.item(i).value != "")
+			{
+				var sp = masp.item(i).value;
+				var pos = parseInt(sp.indexOf(" - "));
+				if(pos > 0)
+				{
+					masp.item(i).value = sp.substring(0, pos);
+					tensp.item(i).value = sp.substr(parseInt(sp.indexOf(" - ")) + 3);					
+				}
+			}
+			else
+			{
+				tensp.item(i).value = "";
+				if(type.value == "1")
+				{
+					var soluong = document.getElementsByName("soluong");
+					soluong.item(i).value = "";
+				}
+			}			
+		}
+		setTimeout(replaces, 20);
+	}	
+	replaces();
+	
+	function keypress(e)
+	{    
+		var keypressed = null;
+		if (window.event)
+			keypressed = window.event.keyCode; //IE
+		else
+			keypressed = e.which; //NON-IE, Standard
+		
+		if (keypressed < 48 || keypressed > 57)
+		{ 
+			if (keypressed == 8 || keypressed == 127 || keypressed == 37 || keypressed == 39)
+			{
+				return;
+			}
+			return false;
+		}
+	}
+	
+	function submitform()
+	{   
+	   document.forms["dkkmForm"].submit();
+	}
+
+	function excel()
+	{
+		var type = document.getElementById("type").value;
+		var tonglg = document.getElementById("tonglg");
+		var tongtn = document.getElementById("tongtn");
+		if(type == 2)
+		{
+			if(tonglg.checked)
+			{
+				var tongluong = document.getElementById("tongluong").value;			
+				if(tongluong == "")
+				{
+					alert('Ban phai nhap tong luong cua dieu kien khuyen mai');
+					return;
+				}
+			}
+			if(tongtn.checked)
+			{
+				var tongtien = document.getElementById("tongtien").value;			
+				if(tongtien == "")
+				{
+					alert('Ban phai nhap tong tien cua dieu kien khuyen mai');
+					return;
+				}
+			}
+		}
+		
+		if(checkSanphamNhap() == false & type != 3)
+		{
+			alert('Khong co san pham nao duoc nhap cho dieu kien khuyen mai');
+			return;
+		}
+		
+		if(checkTrungmasp() == false)
+		{
+			alert('Kiem tra lai cac san pham tra trung bay trung ma...');
+			return;
+		}
+		
+		if(type == 1) //nhap soluong tung san pham
+		{
+			if(checkSanpham() == false)
+			{
+				alert('Kiem tra lai so luong san pham');
+				return;
+			}
+		}
+		
+		document.forms["dkkmForm"].action.value = "excel";
+		document.forms["dkkmForm"].submit();
+	}
+	
+	function saveform()
+	{
+		var type = document.getElementById("type").value;
+		var tonglg = document.getElementById("tonglg");
+		var tongtn = document.getElementById("tongtn");
+		if(type == 2)
+		{
+			if(tonglg.checked)
+			{
+				var tongluong = document.getElementById("tongluong").value;			
+				if(tongluong == "")
+				{
+					alert('Ban phai nhap tong luong cua dieu kien khuyen mai');
+					return;
+				}
+			}
+			if(tongtn.checked)
+			{
+				var tongtien = document.getElementById("tongtien").value;			
+				if(tongtien == "")
+				{
+					alert('Ban phai nhap tong tien cua dieu kien khuyen mai');
+					return;
+				}
+			}
+		}
+		
+		if(checkSanphamNhap() == false & type != 3)
+		{
+			alert('Khong co san pham nao duoc nhap cho dieu kien khuyen mai');
+			return;
+		}
+		
+		if(checkTrungmasp() == false)
+		{
+			alert('Đã có sản phẩm bị trùng vui lòng kiểm tra lại');
+			return;
+		}
+		
+		if(type == 1) //nhap soluong tung san pham
+		{
+			if(checkSanpham() == false)
+			{
+				alert('Kiem tra lai so luong san pham');
+				return;
+			}
+		}
+		
+		document.forms["dkkmForm"].action.value = "save";
+		document.forms["dkkmForm"].submit();		
+	}
+	
+	function checkSanpham()
+	{	
+		var masp = document.getElementsByName("masp");
+		var soluong = document.getElementsByName("soluong");
+		for(k=0; k < masp.length; k++)
+		{
+			if(masp.item(k).value != "")
+			{
+				if(soluong.item(k).value == "")
+					return false;
+			}	
+		}
+		return true;
+	}
+	
+	function checkTrungmasp()
+	{
+		var masp = document.getElementsByName("masp");
+		for(l = 0; l < (masp.length - 1) ; l++)
+		{
+			for(m = (parseInt(l) + 1); m < masp.length; m++)
+			{
+				if(masp.item(l).value != "" && masp.item(m).value != "")
+				{
+					if(masp.item(l).value == masp.item(m).value)
+						return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	function checkSanphamNhap()
+	{
+		var masp = document.getElementsByName("masp");
+		var soluong = document.getElementsByName("soluong");
+		for(h=0; h < masp.length; h++)
+		{
+			if(masp.item(h).value != "")
+			{
+				return true;
+			}	
+		}
+		return false;
+	}
+	
+	function clearform()
+	{
+		var masp = document.getElementsByName("masp");
+		for(h = 0; h < masp.length; h++)
+		{
+			masp.item(h).value = "";
+		}
+	}
+	
+</script>
+</head>
+<BODY leftmargin="0" bottommargin="0" topmargin="0" rightmargin="0">
+<form name="dkkmForm" method="post" action="../../DkkhuyenmaiUpdateSvl">
+<% redis.clients.jedis.Jedis jedis =  geso.dms.center.util.Utility.getJedis(); %><% geso.dms.center.util.Csrf csdr=new geso.dms.center.util.Csrf(request,response,true,false,true);%>
+ <input type="hidden" name="<%=csdr.get_tokenName() %>" value='<%=csdr.get_tokenValue() %>'>
+
+<input type="hidden" name="userId" value='<%= userId %>'>
+<input type="hidden" name="action" value='1'>
+<input type="hidden" name="id" value='<%= dkkmBean.getId() %>'>
+<div id="main" style="width:99%; padding-left:2px">
+	<div align="left" id="header" style="width:100%; float:none">
+    	<div style="width:55%; padding:5px; float:left" class="tbnavigation">
+        	<%= url %> > <%=Utility.GLanguage("Cập nhật",session,jedis) %>
+        </div>
+        <div align="right" style="padding:5px" class="tbnavigation">
+        	<%=Utility.GLanguage("Chào mừng bạn",session,jedis) %>  <%= userTen %> &nbsp;
+        </div>
+    </div>
+  
+  	<div align="left" id="button" style="width:100%; height:32px; padding:0px; float:none" class="tbdarkrow">
+    	<A href= "../../RouterSvl?task=<%= Utilback.dongMa(getServletContext().getInitParameter("RedirectNoScript") +"DieukienkhuyenmaiSvl?userId="+ userId +"")%>" >
+        	<img src="../images/Back30.png" alt="Quay ve"  title="Quay ve" border="1px" longdesc="Quay ve" style="border-style:outset"></A>
+        <A href="javascript:saveform()" >
+        	<IMG src="../images/Save30.png" title="Luu lai" alt="Luu lai" border ="1px" style="border-style:outset"></A>
+        <A href="javascript:excel()" >
+        	<IMG src="../images/excel.gif" title="Excel" alt="Excel" border ="1px" height=30 width=30 style="border-style:outset"></A>
+
+    </div>
+  	
+  	<div align="left" style="width:100%; float:none; clear:left">
+  		<fieldset>
+    		<legend class="legendtitle"> <%=Utility.GLanguage("Báo lỗi nhập liệu",session,jedis) %></legend>
+    		<textarea name="dataerror"  style="width: 100% ; color:#F00 ; font-weight:bold" style="width: 100%"  rows="1" readonly="readonly"><%= dkkmBean.getMessage() %></textarea>
+		         <% dkkmBean.setMessage(""); %>
+    	</fieldset>
+  	</div>
+  	
+    <div align="left" style="width:100%; float:none; clear:left">
+    <fieldset>
+    	<legend class="legendtitle"> <%=Utility.GLanguage("Điều kiện khuyến mãi",session,jedis) %></legend>
+        	<div style="float:none; width:100%" align="left">
+            <TABLE width="100%" cellpadding="6" cellspacing="0">							
+                <TR>
+                    <TD width="15%" class="plainlabel" valign="top"><%=Utility.GLanguage("Diễn giải",session,jedis) %> </TD>
+                    <TD class="plainlabel" valign="top"><textarea name="diengiai" style="width:500px" rows="1"><%= dkkmBean.getDiengiai() %></textarea></TD>
+                </TR> 
+                
+                <TR>
+                    <TD class="plainlabel"><%=Utility.GLanguage("Loại điều kiện",session,jedis) %></TD>
+                    <TD class="plainlabel">
+                        <select name="type" id="type" onChange="submitform();">
+                        	 <option value=""> </option>
+                        	 <option value="1" <%= dkkmBean.getType().equals("1") ? "selected": "" %>><%=Utility.GLanguage("Bắt buộc nhập số lượng từng sản phẩm",session,jedis) %></option>
+                         	<option value="2" <%= dkkmBean.getType().equals("2") ? "selected": "" %>><%=Utility.GLanguage("Bất kỳ trong",session,jedis) %></option>
+                        </select>
+                     </TD> 
+                </TR>  	
+                
+                
+                <%if(!dkkmBean.getType().equals("3")){ %>
+               
+                <TR>
+                    <TD width="15%" class="plainlabel" valign="top"><%=Utility.GLanguage("Hình thức",session,jedis) %></TD>
+                    <TD class="plainlabel" valign="middle">
+                    <%
+                    	String check1 ="", check2 = "";
+                    	if( (!dkkmBean.getType().equals("2")) || dkkmBean.getHinhthuc().equals("1"))
+                    		check1 = "checked";
+                    	else
+                    		check2 = "checked";
+                    %>                   
+	                    <input type="radio" name="option" value="1" id="tonglg" onChange="submitform();"  <%=check1 %>><%=Utility.GLanguage("Nhập tổng lượng",session,jedis) %> &nbsp;
+	                    <input type="radio" name="option" value="2" id="tongtn" onChange="submitform();" <%=check2 %>><%=Utility.GLanguage("Nhập tổng tiền",session,jedis) %> &nbsp;
+                                         
+                    </TD>
+                </TR>
+                
+                <% if(dkkmBean.getHinhthuc().equals("1")){ %>
+                	<TR>
+	                    <TD class="plainlabel"><%=Utility.GLanguage("Tổng lượng",session,jedis) %></TD>
+	                    <% if(dkkmBean.getType().equals("1")){ %>
+	                    	<TD class="plainlabel"><input type="text" name="tongluong" id="tongluong" value="<%= dkkmBean.getTongluong() %>" style="text-align:right" readonly></TD> 
+	                    <%}else{ %>
+	                    	<TD class="plainlabel"><input type="text" name="tongluong" id="tongluong" value="<%= dkkmBean.getTongluong() %>" style="text-align:right"  onkeypress="return keypress(event);"></TD> 
+	                    <%} %>
+                	</TR>
+                <%} %>
+                <% if(dkkmBean.getHinhthuc().equals("2")){ %>
+                	<TR>
+	                    <TD class="plainlabel"><%=Utility.GLanguage("Tổng tiền",session,jedis) %> </TD>
+	                    <% if(dkkmBean.getType().equals("1")){ %>
+	                    	<TD class="plainlabel"><input type="text" onkeyup="Dinhdang(this)" name="tongtien" id="tongtien" value="<%= formatter.format(Utility.parseDouble(dkkmBean.getTongtien().replace(",",""))) %>" style="text-align:right"  readonly> VND</TD> 
+	                    <%}else{ %>
+	                    	<TD class="plainlabel"><input type="text" onkeyup="Dinhdang(this)" name="tongtien" id="tongtien" value="<%= formatter.format(Utility.parseDouble(dkkmBean.getTongtien().replace(",",""))) %>" style="text-align:right"  onkeypress="return keypress(event);"> VND</TD> 
+	                    <%} %>
+	                </TR>   
+                <%} %>
+                <TR>
+                    <TD class="plainlabel"><%=Utility.GLanguage("Nhóm sản phẩm",session,jedis) %></TD>
+                    <TD class="plainlabel">
+                        <select name="nhomsp" id="nhomsp" onChange = "submitform();">
+                            <option value="" selected></option>
+                            <% if(nhomsp != null){
+								  try{ while(nhomsp.next()){ 
+					    			if(nhomsp.getString("nspId").equals(dkkmBean.getNhomspId())){ %>
+					      				<option value='<%= nhomsp.getString("nspId")%>' selected><%= nhomsp.getString("nspTen") %></option>
+					      			<%}else{ %>
+					     				<option value='<%= nhomsp.getString("nspId")%>'><%= nhomsp.getString("nspTen") %></option>
+					     	<%}} nhomsp.close(); }catch(java.sql.SQLException e){} }%>
+                        </select>
+                     </TD> 
+                </TR>  		
+                 <TR> 
+                     <td class="plainlabel" align="left"><%=Utility.GLanguage("Tính theo",session,jedis) %></td>
+                           	<td  class="plainlabel" align="left" >
+                           	<select name="isThung" id="isThung"  style="width: 200px;"   >
+		
+					<%
+						String[] data ={"đơn vị chuẩn","Đơn vị thùng","Điểm"};  
+					
+						for(int x=0 ; x< data.length;x++)
+						{
+				
+							if( (x+"").equals(dkkmBean.getIsThung()) )
+							{
+								%>
+								<option value="<%= x %>" selected="selected"  ><%=data[x] %></option>
+							<% } else { %>
+								<option value="<%= x%>"  ><%=data[x] %></option>
+							<%}
+						}
+					%>							
+				</select>
+	
+                           	</td>
+                </TR>  
+                
+                				
+            </TABLE>
+            <hr> 
+            </div>
+           
+           <div class="" align="left" style="width:100%; float:none; clear:none;">
+           <TABLE class="tabledetail" width="100%" border="0" cellpadding="1" cellspacing="1" >
+                <TR class="tbheader">                   
+                 <% if(dkkmBean.getType().equals("1")){ %>
+                	<TH align="center" width="15%"><%=Utility.GLanguage("Mã sản phẩm",session,jedis) %> </TH>
+                	<TH align="left" width="73%"><%=Utility.GLanguage("Tên sản phẩm",session,jedis) %></TH>
+               	 	<TH align="center" width="10%"><%=Utility.GLanguage("Số lượng",session,jedis) %></TH>
+                 <%}else{ %>
+                 	<TH align="center" width="15%"><%=Utility.GLanguage("Mã sản phẩm",session,jedis) %> </TH>
+                	<TH align="left" width="73%"><%=Utility.GLanguage("Tên sản phẩm",session,jedis) %></TH>
+               	 	<TH align="center" width="10%"><%=Utility.GLanguage("Số lượng",session,jedis) %></TH>
+             
+                 <%} %>
+                </TR>
+                <% if(dkkmBean.getNhomspId().length() > 0)
+                {
+                	for( int i =0; i < spList.size(); i++)
+                	{
+                		ISanpham sp = spList.get(i);
+                	%>
+                		<TR class='tbdarkrow'>	                    	
+	                    	<td align="center"><input type="text" style="width:100%" value="<%= sp.getMasanpham() %>" name="masp" readonly></td>
+	                    	<td align="left"><input type="text" style="width:100%" value="<%= sp.getTensanpham() %>" name = "tensp" readonly></td>
+	                    	<% if(sp_nhomSpIds.containsKey(sp.getMasanpham().trim())){
+	                    		if(dkkmBean.getType().equals("1")){ %>
+	                    			<td align="center"><input type="text" value="<%= sp_nhomSpIds.get(sp.getMasanpham()) %>" style="width:100%" name = "soluong" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    		<%}else{ %>
+	                    			<td align="center" style="display: none"><input type="text" value="<%= sp_nhomSpIds.get(sp.getMasanpham()) %>" style="width:100%" name = "soluong" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    	<%}}else{ if(dkkmBean.getType().equals("1")){ %>
+	                    			<td align="center"><input type="text" style="width:100%" name = "soluong" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    		<%}else{ %>
+	                    			<td align="center"><input type="text" style="width:100%" name = "soluong" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    		<%}} %>
+		                </TR>
+                	<%}}
+                else { if(dkkmBean.getType().length() > 0){
+               			for(int i = 0; i < spSudungList.size(); i++)
+               			{
+               				Sanpham sp = (Sanpham)spSudungList.get(i);  %>
+              				<TR class='tbdarkrow'>
+		                    	<td align="center"><input type="text" style="width:100%" value="<%= sp.getMasanpham() %>" name = "masp" onkeyup="ajax_showOptions(this,'abc',event)" style="width:100%" AUTOCOMPLETE="off"></td>
+		                   		<td align="left"><input type="text" style="width:100%" value="<%= sp.getTensanpham() %>" name= "tensp" readonly></td>
+		                   		<% if(dkkmBean.getType().equals("1")){ %>
+		                    		<td align="center"><input type="text" name="soluong" style="width:100%" value="<%= sp.getSoluong() %>"  style="text-align:right" onkeypress="return keypress(event);"></td>
+		                    	<%}else{ %>
+		                    		<td align="center"><input type="text" name="soluong" style="width:100%" value="<%= sp.getSoluong() %>"  style="text-align:right" onkeypress="return keypress(event);"></td>
+		                    	<%} %>
+	                    	</TR>
+               		<% }%>
+               		              		         		
+               		<% for(int i = 0; i < 40 - spSudungList.size(); i++){ %>
+	                <TR class='tbdarkrow'>
+	                    	<td align="center"><input type="text" style="width:100%" value="" name = "masp" onkeyup="ajax_showOptions(this,'abc',event)" style="width:100%" AUTOCOMPLETE="off"></td>
+	                   		<td align="left"><input type="text" style="width:100%" value="" name= "tensp" readonly></td>
+	                   		<% if(dkkmBean.getType().equals("1")){ %>
+	                    		<td align="center"><input type="text" name="soluong" style="width:100%" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    	<%} else{ %>
+	                    		<td align="center"><input type="text" name="soluong" style="width:100%" style="text-align:right" onkeypress="return keypress(event);"></td>
+	                    	<%} %>
+	                </TR>
+                	<%}}} %>
+                <tr class="tbfooter">
+                    <td colspan="4">&nbsp;</td>
+                </tr>            
+            </TABLE> 
+            <br>
+               <a class="button" href="javascript:clearform()">
+                   <img style="top: -4px;" src="../images/button.png" alt=""><%=Utility.GLanguage("Nhập lại",session,jedis) %> </a>  
+                    <%} else {%>
+            <TR>
+	                <TD class="plainlabel"><%=Utility.GLanguage("Tổng tiền",session,jedis) %> </TD>
+	                    <% if(dkkmBean.getType().equals("1")){ %>
+	                    	<TD class="plainlabel"><input type="text" onkeyup="Dinhdang(this)"  value="<%= formatter.format(Utility.parseDouble(dkkmBean.getTongtien().replace(",",""))) %>" name="tongtien" id="tongtien" value="<%= dkkmBean.getTongtien() %>" style="text-align:right" size="15" readonly> VND</TD> 
+	                    <%}else{ %>
+	                    	<TD class="plainlabel"><input type="text" onkeyup="Dinhdang(this)" name="tongtien" id="tongtien" value="<%= formatter.format(Utility.parseDouble(dkkmBean.getTongtien().replace(",",""))) %>" style="text-align:right" size="15" onkeypress="return keypress(event);"> VND</TD> 
+	                    <%} %>
+	                </TR> 
+           <%} %>             
+        </div>      
+     </fieldset>	
+    </div>
+</div><%geso.dms.center.util.Utility.JedisClose(jedis); %>
+</form>
+</BODY>
+</HTML>

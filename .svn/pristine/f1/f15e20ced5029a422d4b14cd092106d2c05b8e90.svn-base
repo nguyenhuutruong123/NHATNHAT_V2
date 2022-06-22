@@ -1,0 +1,373 @@
+package geso.dms.center.servlets.reports;
+
+import geso.dms.center.beans.stockintransit.IStockintransit;
+import geso.dms.center.beans.stockintransit.imp.Stockintransit;
+import geso.dms.center.servlets.report.ReportAPI;
+import geso.dms.distributor.db.sql.dbutils;
+import geso.dms.distributor.util.Utility;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import com.aspose.cells.BorderLineType;
+import com.aspose.cells.Color;
+import com.aspose.cells.FileFormatType;
+import com.aspose.cells.Worksheet;
+
+
+public class ThucDatChiTieuSR extends HttpServlet {
+	
+	private static final long serialVersionUID = 1L; 
+	
+	public ThucDatChiTieuSR() {
+		super();
+	}
+
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		request.setCharacterEncoding("UTF-8");
+		response.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html; charset=UTF-8");
+		HttpSession session = request.getSession();
+		IStockintransit obj = new Stockintransit();
+		Utility util = new Utility();
+
+		String querystring = request.getQueryString();
+		String userId = util.getUserId(querystring);
+		obj.setuserId(userId);
+		obj.init();
+
+		session.setAttribute("obj", obj);
+		session.setAttribute("userId", userId);
+		String nextJSP = "/DMS_STANDARD/pages/Center/ThucDatChiTieuSR.jsp";
+		response.sendRedirect(nextJSP);
+	}
+
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		request.setCharacterEncoding("UTF-8");
+		response.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html; charset=UTF-8");
+		HttpSession session = request.getSession();
+		IStockintransit obj = new Stockintransit();	
+		Utility util = new Utility();
+
+		obj.setuserId((String)session.getAttribute("userId")==null?"":
+			(String) session.getAttribute("userId"));
+		obj.setuserId((String) session.getAttribute("userId"));
+
+		obj.setuserTen((String)session.getAttribute("userTen")==null? "":
+			(String) session.getAttribute("userTen"));
+
+		obj.setnppId(util.antiSQLInspection(request.getParameter("nppId"))==null?"":
+			util.antiSQLInspection(request.getParameter("nppId")));
+
+		obj.setkenhId(util.antiSQLInspection(request.getParameter("kenhId"))==null? "":
+			util.antiSQLInspection(request.getParameter("kenhId")));
+
+		obj.setdvkdId(util.antiSQLInspection(request.getParameter("dvkdId"))==null? "":
+			util.antiSQLInspection(request.getParameter("dvkdId")));
+
+		obj.setMonth(util.antiSQLInspection(request.getParameter("month"))==null? "":
+			util.antiSQLInspection(request.getParameter("month")));
+
+		obj.setYear(util.antiSQLInspection(request.getParameter("year"))==null? "":
+			util.antiSQLInspection(request.getParameter("year")));	   	 
+
+		obj.setvungId(util.antiSQLInspection(request.getParameter("vungId"))==null? "":
+			util.antiSQLInspection(request.getParameter("vungId")));	   	 
+
+		obj.setkhuvucId(util.antiSQLInspection(request.getParameter("khuvucId"))==null? "":
+			util.antiSQLInspection(request.getParameter("khuvucId")));	 
+
+
+		obj.setdvdlId(util.antiSQLInspection(request.getParameter("dvdlId"))==null? "":
+			util.antiSQLInspection(request.getParameter("dvdlId")));
+		
+		System.out.println("loaiNv : "+ util.antiSQLInspection(request.getParameter("loainv")));
+		
+		obj.setLoaiNv(util.antiSQLInspection(request.getParameter("loainv"))==null? "":
+			util.antiSQLInspection(request.getParameter("loainv")));
+
+		obj.setDdkd(util.antiSQLInspection(request.getParameter("ddkdId"))==null? "":
+			util.antiSQLInspection(request.getParameter("ddkdId")));
+
+
+		String []fieldsHien = request.getParameterValues("fieldsHien");
+		obj.setFieldShow(fieldsHien);		 
+
+
+		String nextJSP = "/DMS_STANDARD/pages/Center/ThucDatChiTieuSR.jsp";		 
+		try
+		{
+			String action=util.antiSQLInspection(request.getParameter("action"));
+			if(action.equals("Taomoi")){
+				response.setContentType("application/xlsm");
+				response.setHeader("Content-Disposition", "attachment; filename=ThucHienChiTieu.xlsm");
+				OutputStream out = response.getOutputStream();
+				ExportToExcel(out,obj);			}			
+		}catch(Exception ex){
+			obj.setMsg(ex.getMessage());
+		}
+		System.out.println("loainv truoc init : "+ obj.getLoaiNv());
+		obj.init();	    
+		System.out.println("loainv sau init : "+ obj.getLoaiNv());
+		session.setAttribute("obj", obj);
+		session.setAttribute("userId", obj.getuserId());		
+		response.sendRedirect(nextJSP);
+	}
+
+	private String GetExcelColumnName(int columnNumber)
+	{
+		int dividend = columnNumber;
+		String columnName = "";
+		int modulo;
+
+		while (dividend > 0)
+		{
+			modulo = (dividend - 1) % 26;
+			columnName = (char)(65 + modulo) + columnName;
+			dividend = (int)((dividend - modulo) / 26);
+		} 
+
+		return columnName;
+	}
+	
+	private String getDateTime()
+	{
+        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        Date date = new Date();
+        return dateFormat.format(date);	
+	}
+	
+	private void TaoBaoCao(com.aspose.cells.Workbook workbook, IStockintransit obj, int sheetNum )throws Exception
+	{
+		try
+		{
+			com.aspose.cells.Worksheets worksheets = workbook.getWorksheets();
+			Worksheet worksheet = worksheets.getSheet(sheetNum);
+			com.aspose.cells.Cells cells = worksheet.getCells();
+
+			String nhanvien = "";
+			if(obj.getLoaiNv().equals("1")) {nhanvien = "SR";};
+			if(obj.getLoaiNv().equals("5")) {nhanvien = "NPP";};
+			
+			dbutils db = new dbutils();
+			
+			cells.merge(0, 0, 0, 3 );		
+			com.aspose.cells.Cell cell = cells.getCell("A1");
+			cell.setValue("THỰC ĐẠT CHỈ TIÊU " + nhanvien);
+			ReportAPI.setBorder_Style_MergerCell(cells, 0, 0, 0, 3, BorderLineType.NONE, Color.BLACK, cell.getStyle());
+			
+			cells.merge(1, 0, 1, 3 );
+			cell = cells.getCell("A2");
+			cell.setValue("Ngày tạo " + getDateTime());
+			ReportAPI.setBorder_Style_MergerCell(cells, 1, 1, 0, 3, BorderLineType.NONE, Color.BLACK, cell.getStyle());
+			
+			String dauthang = obj.getYear() + "-" + (obj.getMonth().trim().length() > 1 ? obj.getMonth() : "0" + obj.getMonth()) + "-01";
+			
+			String query = "";
+			String queryCHITIEU = "";
+			String queryTHUCDAT = "";
+			
+			//B1 Lấy tiêu chí
+			query =  " select b.PK_SEQ, b.DIENGIAI, b.NHOMSP_FK, b.TIEUCHI, dbo.[Getthuong_chitieu](b.pk_seq,1,( select distinct b.pk_seq from  NHAPHANPHOI b  \n"+
+								 "					inner join TINHTHANH tt on tt.PK_SEQ=b.TINHTHANH_FK  \n"+
+								 "					inner join VUNG vv on vv.PK_SEQ=tt.VUNG_FK   \n"+
+								 "					inner join NHANVIEN nv  \n"+
+								 "					on b.SITECODE=nv.CONVSITECODE   \n"+
+								 "					 where nv.PK_SEQ="+obj.getuserId()+")"+
+				 ") as noidung, b.loaiDS   "+
+					 " from TIEUCHITINHTHUONG a inner join TIEUCHITHUONG_CHITIET b on a.PK_SEQ = b.TIEUCHITINHTHUONG_FK"+
+					 " where a.THANG = " + obj.getMonth() + " and a.NAM = '" + obj.getYear() + "' and a.TRANGTHAI = '1' and a.loai = '"+ obj.getLoaiNv() +"' "+
+					 " order by PK_SEQ asc";
+			System.out.println("::: LAY TIEU CHI THUONG: " + query);
+			ResultSet rs = db.get(query);
+			
+			String sqlBaocao = "";
+			String sqlTieuchi = "";
+			String sqlThucdat01 = "";
+			String sqlThucdat02 = "";
+			String ufn = "";
+			if(obj.getLoaiNv().equals("1")){ ufn = "dbo.ufn_KPI_SR"; }
+			else if(obj.getLoaiNv().equals("5")){ ufn = "dbo.ufn_KPI_NPP"; }
+			String tieuchian="";
+			while( rs.next() )
+			{
+				sqlTieuchi += "[" + rs.getString("DIENGIAI") + "], ";
+				sqlThucdat01 += " ISNULL( [" + rs.getString("PK_SEQ") + "].thucdat, 0 ) as [TD_" + rs.getString("DIENGIAI") + "], ";
+				sqlThucdat02 += " left join "+ ufn +"('" + dauthang + "', " + rs.getString("PK_SEQ") + ", " + rs.getString("TIEUCHI") + ", " + rs.getString("nhomsp_fk") + ") [" + rs.getString("PK_SEQ") + "] on a.PK_SEQ = [" + rs.getString("PK_SEQ") + "].NhanVien_FK ";
+			
+				sqlBaocao += ", [" + rs.getString("DIENGIAI") + "], [TD_" + rs.getString("DIENGIAI") + "], " + 
+							 " dbo.TyLeKPI( [TD_" + rs.getString("DIENGIAI") + "], [" + rs.getString("DIENGIAI") + "] ) as tile, " + 
+							 " dbo.TinhThuongKPI( dbo.TyLeKPI( [TD_" + rs.getString("DIENGIAI") + "], [" + rs.getString("DIENGIAI") + "] ), " + rs.getString("TIEUCHI") + ", " + rs.getString("loaiDS") + ", [TD_" + rs.getString("DIENGIAI") + "], '" + rs.getString("noidung") + "' ) as thuong ";
+				tieuchian +=rs.getString("TIEUCHI")+",";
+			}
+			rs.close();
+			
+			String table = "";
+			if(obj.getLoaiNv().equals("1")){ table = "DAIDIENKINHDOANH"; }
+			else if(obj.getLoaiNv().equals("5")){ table = "NHAPHANPHOI"; };
+			System.out.println("::: SQL BAO CAO: " + sqlBaocao);
+			if( sqlThucdat01.trim().length() > 0 )
+			{
+				sqlThucdat01 = sqlThucdat01.substring(0, sqlThucdat01.length() - 2);
+				queryTHUCDAT = "select a.PK_SEQ as manhanvien, " + sqlThucdat01 + " from "+ table +" a " + sqlThucdat02;
+				
+				sqlTieuchi = sqlTieuchi.substring(0, sqlTieuchi.length() - 2);
+				
+				if(obj.getLoaiNv().equals("1"))
+				{
+					queryCHITIEU =   
+						 "\nselect manhanvien, tennhanvien, " + sqlTieuchi + 
+						 "\nfrom " + 
+						 "\n( " + 
+						 "\n	select dd.PK_SEQ as manhanvien, dd.TEN as tennhanvien, d.DIENGIAI as tieuchi, b.chitieu " + 
+						 "\n	from CHITIEUNHANVIEN a inner join ChiTieuNhanVien_DDKD b on a.pk_seq = b.CTNV_FK " + 
+						 "\n	inner join DAIDIENKINHDOANH dd on dd.pk_seq= b.NhanVien_FK	inner join DAIDIENKINHDOANH_NPP c on b.NhanVien_FK = c.DDKD_FK " + 
+						 "\n		inner join TIEUCHITHUONG_CHITIET d on b.TCTCT_FK = d.PK_SEQ  " + 
+						 "\n	where a.TRANGTHAI = 1 and a.THANG = '" + obj.getMonth() + "' and a.NAM = '" + obj.getYear() + "' and b.npp_fk=( select distinct b.pk_seq from  NHAPHANPHOI b  \n"+
+						 "					inner join TINHTHANH tt on tt.PK_SEQ=b.TINHTHANH_FK  \n"+
+						 "					inner join VUNG vv on vv.PK_SEQ=tt.VUNG_FK   \n"+
+						 "					inner join NHANVIEN nv  \n"+
+						 "					on b.SITECODE=nv.CONVSITECODE   \n"+
+						 "					 where nv.PK_SEQ="+obj.getuserId()+")"+
+						 "\n) " + 
+						 "\nDT PIVOT ( max(chitieu) FOR tieuchi IN ( " + sqlTieuchi + " ) ) AS pvt ";
+				}
+				else if (obj.getLoaiNv().equals("5"))
+				{
+					queryCHITIEU =   
+							 "\nselect manhanvien, tennhanvien, " + sqlTieuchi + 
+							 "\nfrom " + 
+							 "\n( " + 
+							 "\n	select dd.PK_SEQ as manhanvien, dd.TEN as tennhanvien, d.DIENGIAI as tieuchi, b.chitieu " + 
+							 "\n	from CHITIEUNHANVIEN a inner join ChiTieuNhanVien_NPP b on a.pk_seq = b.CTNV_FK " + 
+							 "\n	inner join nhaphanphoi dd on dd.pk_seq= b.NhanVien_FK " + 
+							 "\n	inner join TIEUCHITHUONG_CHITIET d on b.TCTCT_FK = d.PK_SEQ  " + 
+							 "\n	where a.TRANGTHAI = 1 and a.THANG = '" + obj.getMonth() + "' and a.NAM = '" + obj.getYear() + "' " +
+							 "\n) " + 
+							 "\nDT PIVOT ( max(chitieu) FOR tieuchi IN ( " + sqlTieuchi + " ) ) AS pvt ";
+				}
+				System.out.println("SQL chi tieusdad"+queryCHITIEU );
+			}
+			
+			System.out.println("::: LẤY CHỈ TIÊU: " + queryCHITIEU);
+			System.out.println("::: LẤY THỰC ĐẠT: " + queryTHUCDAT);
+			
+			query = "select CT.manhanvien, CT.tennhanvien " + sqlBaocao + 
+					"from ( " + queryCHITIEU + " ) CT left join ( " + queryTHUCDAT + " ) TD on CT.manhanvien = TD.manhanvien ";
+			
+			//Vẽ tiêu đề
+			cell = cells.getCell("A5");
+			cell.setValue("Mã nhân viên");
+			ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+			
+			cell = cells.getCell("B5");
+			cell.setValue("Tên nhân viên");
+			cells.setColumnWidth(1, 30.0f);
+			ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+			
+			String[] tieude = sqlTieuchi.split(",");
+			String[] array_tieuchian=tieuchian.split(",");
+			for( int i = 0; i < tieude.length; i++ )
+			{
+				int cobatdau = (i * 4) + 2;
+				cells.merge(3, cobatdau, 3, cobatdau + 3 );		
+				cell = cells.getCell(3, cobatdau );
+				cell.setValue( tieude[i].replace("[", "").replace("]", "") );
+				ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+				ReportAPI.setBorder_Style_MergerCell(cells, 3, 3, cobatdau, cobatdau + 3, BorderLineType.THIN, Color.BLACK, cell.getStyle());
+				
+				cell = cells.getCell(4, cobatdau++);
+				cell.setValue("Chỉ tiêu");
+				cells.setColumnWidth(cobatdau - 1, 13.0f);
+				ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+				
+				cell = cells.getCell(4, cobatdau++);
+				cell.setValue("Thực đạt");
+				cells.setColumnWidth(cobatdau - 1, 13.0f);
+				ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+				
+					
+				cell = cells.getCell(4, cobatdau++);
+				cell.setValue("Tỉ lệ đạt (%)");
+				cells.setColumnWidth(cobatdau - 1, 13.0f);
+				ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+				
+				if(array_tieuchian[i].equals("3")||array_tieuchian[i].equals("4"))
+				{
+					cells.hideColumn(cobatdau-1);
+				}
+				cell = cells.getCell(4, cobatdau++);
+				cell.setValue("Thưởng");
+				cells.setColumnWidth(cobatdau - 1, 13.0f);
+				ReportAPI.setCellBackground(cell, new Color(219,229,241), BorderLineType.THIN, true, 0);
+			}
+
+			System.out.println("::: LẤY BÁO CÁO: " + query);
+			ResultSet ctRs = db.get(query);
+			ResultSetMetaData rsmd = ctRs.getMetaData();
+			int socottrongSql = rsmd.getColumnCount();
+			int countRow = 5;
+			while(ctRs.next())
+			{
+				for(int i = 1; i <= socottrongSql; i++)
+				{
+					Color c = Color.WHITE;
+					cell = cells.getCell(countRow, i - 1 );
+					
+					if(rsmd.getColumnType(i) == Types.DOUBLE || rsmd.getColumnType(i) == Types.INTEGER || rsmd.getColumnType(i) == Types.DECIMAL )
+					{
+						cell.setValue(ctRs.getDouble(i));
+						ReportAPI.setCellBackground(cell, c, BorderLineType.THIN, false, 41);
+					}
+					else
+					{
+						cell.setValue(ctRs.getString(i));
+						ReportAPI.setCellBackground(cell, c, BorderLineType.THIN, false, 0);
+					}
+				}
+				
+				countRow ++;
+			}
+			
+			if(rs != null) rs.close();
+			if(db != null){
+				db.shutDown();
+			}
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			throw new Exception("Lỗi ! không thể tạo báo cáo !");
+		}
+	}
+	
+	private void ExportToExcel(OutputStream out,IStockintransit obj )throws Exception
+	{
+		try
+		{ 			
+			com.aspose.cells.Workbook workbook = new com.aspose.cells.Workbook();
+			workbook.setFileFormatType(FileFormatType.EXCEL2007XLSM);
+			
+			TaoBaoCao(workbook, obj, 0);
+			workbook.save(out);			
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+			throw new Exception(ex.getMessage());
+		}
+	}
+
+}
